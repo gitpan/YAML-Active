@@ -1,0 +1,11 @@
+Build.PL
+Changes
+MANIFEST			This list of files
+META.yml
+Makefile.PL
+README
+lib/YAML/Active.pm
+t/1.t
+t/lib/My/YAML/Active/Add.pm
+t/lib/My/YAML/Active/WritePerson.pm
+t/testperson.yaml

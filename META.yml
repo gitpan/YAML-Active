@@ -1,0 +1,40 @@
+--- #YAML:1.0
+name: YAML-Active
+version: 1.00
+license: perl
+distribution_type: module
+requires:
+  YAML: 0.35
+  perl: 5.6.1
+recommends: {}
+build_requires: {}
+conflicts: {}
+provides:
+  YAML::Active:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::Concat:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::Eval:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::Include:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::Print:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::Shuffle:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::ValueMutator:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::lc:
+    file: lib/YAML/Active.pm
+    version: 1.00
+  YAML::Active::uc:
+    file: lib/YAML/Active.pm
+    version: 1.00
+generated_by: Module::Build version 0.20
