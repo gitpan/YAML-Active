@@ -1,6 +1,5 @@
 package YAML::Active;
 
-use 5.006001;
 use strict;
 use warnings;
 use YAML ();   # no imports, we'll define our own Load() and LoadFile()
@@ -9,11 +8,12 @@ use YAML ();   # no imports, we'll define our own Load() and LoadFile()
 use base 'Exporter';
 
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 
 our %EXPORT_TAGS = (
-    load   => [ qw{Load LoadFile} ],
+    load   => [ qw{Load Load_inactive Reload LoadFile} ],
+    dump   => [ qw{Dump} ],
     active => [ qw{node_activate array_activate hash_activate} ],
     assert => [ qw{assert_arrayref assert_hashref} ],
     null   => [ qw{yaml_NULL NULL} ],
@@ -24,43 +24,175 @@ our @EXPORT_OK = @{ $EXPORT_TAGS{all} = [ map { @$_ } values %EXPORT_TAGS ] };
 use constant NULL => 'YAML::Active::NULL';
 
 
-sub array_activate ($) {
+sub should_process_node_in_phase {
+    my ($node, $phase) = @_;
+
+    # If we're given a phase, only process nodes that have want to run in that
+    # phase. If we're not given a phase, only process nodes that don't want to
+    # run in a specific phase.
+
+    if (defined $phase) {
+        return 0 unless
+            exists $node->{_phase} && $phase eq $node->{_phase};
+    } else {
+        return 0 if exists $node->{_phase};
+    }
+
+    return 1;
+}
+
+
+sub array_activate ($$) {
+    my ($node, $phase) = @_;
+    #my @result;
+    #my @node = @$node;
+    #for my $index (0..$#node) {
+    #    my $activated = node_activate($node[$index], $phase);
+    #    next if ref($activated) eq NULL;
+    #    push @result, $activated;
+    #}
+    #\@result;
+
     [
         grep { ref ne NULL }
-        map  { node_activate($_) }
-        @{ $_[0] }
+        map  { node_activate($_, $phase) }
+        @$node
     ]
 }
 
 
-sub hash_activate ($) {
-    my $node = shift;
+sub hash_activate ($$) {
+    my ($node, $phase) = @_;
+
+    return unless should_process_node_in_phase($node, $phase);
     return {
         map {
-            my $val = node_activate($node->{$_});
+            my $val = node_activate($node->{$_}, $phase);
             ref $val eq NULL ? () : ($_ => $val)
         } keys %$node
     };
 }
 
 
-sub node_activate ($) {
-    my $node = shift;
-    return array_activate($node) if ref $node eq 'ARRAY';
-    return hash_activate($node)  if ref $node eq 'HASH';
+sub node_activate ($$) {
+    my ($node, $phase) = @_;
+
+    return array_activate($node, $phase) if ref $node eq 'ARRAY';
+    return hash_activate($node, $phase)  if ref $node eq 'HASH';
+
+    # FIXME:
+
+    # don't just do
+    #
+    #   return array_activate($node, $phase)
+    #
+    # because of the following situation:
+    #
+    #   x: &REF
+    #    foo: 1
+    #   y: *REF
+    #
+    # $data->{y} comes out of YAML itself as a proper reference, but when we
+    # just replace $data->{x}, the value of $data->{y} still points to the old
+    # "{ foo => 1 }" hash ref and so gets replaced independently as well. This
+    # means we end up not with a reference but with two reference, each
+    # pointing to the same cloned hash.
+    
+#     if (ref $node eq 'ARRAY') {
+#         my $result = array_activate($node, $phase);
+#         if (UNIVERSAL::isa($result, 'ARRAY')) {
+#             @$node = @$result;
+#             return $node;
+#         } else {
+#             return $result;
+#         }
+#     } elsif (ref $node eq 'HASH') {
+#         my $result = hash_activate($node, $phase);
+#         if (UNIVERSAL::isa($result, 'HASH')) {
+#             %$node = %$result;
+#             return $node;
+#         } else {
+#             return $result;
+#         }
+#     }
+
     if (my $class = ref $node) {
         if (!$node->can('yaml_activate') && index($node,'YAML::Active') != -1) {
             eval "require $class";
             die $@ if $@;
         }
-        return $node->can('yaml_activate') ? $node->yaml_activate : $node;
+
+        if ($node->can('yaml_activate')) {
+            return $node->yaml_activate($phase);
+        } else {
+            # it's a blessed reference, but it can't yaml_activate, so dig
+            # deeper
+
+            my $activated =
+                UNIVERSAL::isa($node, 'ARRAY') ? array_activate($node, $phase) :
+                UNIVERSAL::isa($node, 'HASH' ) ? hash_activate($node, $phase)  :
+                $node;
+            return bless $activated, ref $node;
+
+#             if (UNIVERSAL::isa($node, 'ARRAY')) {
+#                 my $result = array_activate($node, $phase);
+#                 if (UNIVERSAL::isa($result, 'ARRAY')) {
+#                     # the blessing stays the same
+#                     @$node = @$result;
+#                     return $node;
+#                 } else {
+#                     return bless $result, ref $node;
+#                 }
+#             } elsif (UNIVERSAL::isa($node, 'HASH')) {
+#                 my $result = hash_activate($node, $phase);
+#                 if (UNIVERSAL::isa($result, 'HASH')) {
+#                     # the blessing stays the same
+#                     %$node = %$result;
+#                     return $node;
+#                 } else {
+#                     return bless $result, ref $node;
+#                 }
+#             }
+#
+#             return $node;
+        }
     }
     return $node;
 }
 
 
-sub Load     { node_activate YAML::Load    (+shift) }
-sub LoadFile { node_activate YAML::LoadFile(+shift) }
+# pass through
+
+sub Load_inactive {
+    my $node = shift;
+    YAML::Load($node);
+}
+
+
+sub Load {
+    my ($node, $phase) = @_;
+    node_activate(YAML::Load($node), $phase)
+    #my $x = node_activate(Load_inactive($node), $phase);
+    #use Data::Dumper; print Dumper $x;
+    #if (ref $x->{setup} eq 'HASH') {
+    #    printf "foo [%s]\n", $x->{setup}{foo};
+    #    printf "bar [%s]\n", $x->{setup}{bar};
+    #}
+    #$x;
+}
+
+
+
+sub Reload {
+    my ($node, $phase) = @_;
+    Load(Dump($node), $phase);
+}
+
+
+sub LoadFile {
+    my ($node, $phase) = @_;
+    node_activate(YAML::LoadFile($node), $phase)
+}
 
 
 sub assert_arrayref {
@@ -76,6 +208,66 @@ sub assert_hashref {
 
 
 sub yaml_NULL { bless {}, NULL }
+
+
+# end of activation-related code
+# start of dump-related code
+
+sub Dump {
+    my ($node, %args) = @_;
+    local $YAML::ForceBlock = exists $args{ForceBlock} ? $args{ForceBlock} : 1;
+    my $dump = YAML::Dump(node_dump($node));
+
+    our %prepare_dump;
+    $_->can('finish_dump') && $_->finish_dump for keys %prepare_dump;
+
+    $dump;
+}
+
+
+sub node_dump ($) {
+    my $node = shift;
+    return array_dump($node) if ref $node eq 'ARRAY';
+    return hash_dump($node)  if ref $node eq 'HASH';
+    if (my $class = ref $node) {
+        if (!$node->can('yaml_dump')) {
+            eval "require $class";
+            die $@ if $@;
+        }
+
+        if ($node->can('prepare_dump')) {
+            our %prepare_dump;
+            $prepare_dump{ ref $node } ||= $node->prepare_dump;
+        }
+
+        return $node->can('yaml_dump') ? $node->yaml_dump : $node;
+    }
+    return $node;
+}
+
+
+sub array_dump ($) {
+    my $node = shift;
+    [
+        grep { ref ne NULL }
+        map  { node_dump($_) }
+        @$node
+    ]
+}
+
+
+sub hash_dump ($) {
+    my $node = shift;
+    return {
+        map {
+            my $val = node_dump($node->{$_});
+            ref $val eq NULL ? () : ($_ => $val)
+        } keys %$node
+    };
+}
+
+
+
 
 
 package YAML::Active::Concat;
@@ -189,7 +381,7 @@ YAML::Active - Combine data and logic in YAML
     1: !perl/Registry::YAML::Active::WritePerson
        person:
          personname: Foobar
-         nichdl: AB123456-NICAT
+         handle: AB123456-NICAT
     2: !perl/Registry::YAML::Active::WritePerson
        person: !perl/YAML::Active::Include
          filename: t/testperson.yaml
@@ -514,9 +706,9 @@ C<YAML::Active> load the package when necessary. All we need to do is
 to provide a C<yaml_activate()> method that does the work.
 
   package My::YAML::Active::Add;
-  
+
   use YAML::Active qw/array_activate assert_arrayref/;
-  
+
   sub yaml_activate {
       my $self = shift;
       assert_arrayref($self);
@@ -570,7 +762,7 @@ Marcel GrE<uuml>nauer, C<< <marcel@cpan.org> >>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2007 by Marcel GrE<uuml>nauer
+Copyright 2003-2007 by Marcel GrE<uuml>nauer
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

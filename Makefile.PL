@@ -3,6 +3,7 @@ name 'YAML-Active';
 all_from 'lib/YAML/Active.pm';
 
 requires 'YAML';
+requires 'Class::MethodMaker';
 
 build_requires 'Test::More';
 

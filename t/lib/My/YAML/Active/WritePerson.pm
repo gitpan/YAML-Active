@@ -9,11 +9,11 @@ use YAML::Active ':all';
 our $VERSION = '0.01';
 
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     UNIVERSAL::isa($self, 'HASH') && exists $self->{person} or
         die 'YAML::Active::Eval expects a hash ref like { person => {...} }';
     $main::result .= "Writing person:\n";
-    my $person = node_activate($self->{person});
+    my $person = node_activate($self->{person}, $phase);
     $main::result .= " $_ => $person->{$_}\n" for sort keys %$person;
     return 1;   # rc: OK
 }
@@ -73,6 +73,6 @@ marcel gruenauer, E<lt>gr@cc.univie.ac.atE<gt>
 Copyright 2003 by marcel gruenauer
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+it under the same terms as Perl itself.
 
 =cut
