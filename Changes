@@ -1,5 +1,9 @@
 Revision history for Perl extension YAML::Active.
 
+1.01  Do Okt  4 17:55:40 CEST 2007
+	- some bug fixes
+    - fixed documentation
+
 0.01  Fri Oct 24 10:03:21 2003
 	- original version; created by h2xs 1.22 with options
 		-XAn YAML::Active

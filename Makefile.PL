@@ -1,8 +1,11 @@
-# This Makefile.PL creates a pass-through Makefile that simply calls
-# the equivalent Module::Build methods for each make target.  See the
-# documentation for Module::Build::Compat for more information.
+use inc::Module::Install;
+name 'YAML-Active';
+all_from 'lib/YAML/Active.pm';
 
-use 5.008;
-use Module::Build::Compat;
-Module::Build::Compat->run_build_pl(args => \@ARGV);
-Module::Build::Compat->write_makefile();
+requires 'YAML';
+
+build_requires 'Test::More';
+
+use_standard_tests(without => 'pod_coverage');
+auto_include;
+WriteAll;

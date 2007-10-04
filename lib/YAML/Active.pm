@@ -3,11 +3,14 @@ package YAML::Active;
 use 5.006001;
 use strict;
 use warnings;
-
-use base 'Exporter';
 use YAML ();   # no imports, we'll define our own Load() and LoadFile()
 
-our $VERSION = '1.00';
+
+use base 'Exporter';
+
+
+our $VERSION = '1.01';
+
 
 our %EXPORT_TAGS = (
     load   => [ qw{Load LoadFile} ],
@@ -17,7 +20,9 @@ our %EXPORT_TAGS = (
 );
 our @EXPORT_OK = @{ $EXPORT_TAGS{all} = [ map { @$_ } values %EXPORT_TAGS ] };
 
+
 use constant NULL => 'YAML::Active::NULL';
+
 
 sub array_activate ($) {
     [
@@ -536,9 +541,18 @@ And the result would be:
 This could be the beginning of a YAML-based stack machine or at least
 an RPN calculator...
 
-=head1 BUGS
+=head1 TAGS
 
-If you find any bugs or oddities, please do inform the author.
+If you talk about this module in blogs, on del.icio.us or anywhere else,
+please use the C<yamlactive> tag.
+
+=head1 BUGS AND LIMITATIONS
+
+No bugs have been reported.
+
+Please report any bugs or feature requests to
+C<bug-yaml-active@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org>.
 
 =head1 INSTALLATION
 
@@ -550,20 +564,16 @@ The latest version of this module is available from the Comprehensive Perl
 Archive Network (CPAN). Visit <http://www.perl.com/CPAN/> to find a CPAN
 site near you. Or see <http://www.perl.com/CPAN/authors/id/M/MA/MARCEL/>.
 
-=head1 VERSION
-
-This document describes version 1.00 of C<YAML::Active>.
-
 =head1 AUTHOR
 
-Marcel GrE<uuml>nauer <marcel@cpan.org>
+Marcel GrE<uuml>nauer, C<< <marcel@cpan.org> >>
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-Copyright 2001-2003 Marcel GrE<uuml>nauer. All rights reserved.
+Copyright 2007 by Marcel GrE<uuml>nauer
 
-This library is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =cut
 
