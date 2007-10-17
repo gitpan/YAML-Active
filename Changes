@@ -1,7 +1,10 @@
 Revision history for Perl extension YAML::Active.
 
+1.03  Mi Okt 17 13:00:33 CEST 2007
+    - switched from Class::MethodMaker to Class::Accessor::Complex
+
 1.02  Do Okt  4 21:40:34 CEST 2007
-	- forgot to merge the plugin support in
+    - forgot to merge the plugin support in
     - bumped version numbers to 0.02
 
 1.01  Do Okt  4 17:55:40 CEST 2007

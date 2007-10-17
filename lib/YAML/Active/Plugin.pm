@@ -7,12 +7,13 @@ use strict;
 use YAML::Active 'yaml_NULL';
 
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 
-use Class::MethodMaker
-    [ scalar => '__phase',
-    ];
+use base 'Class::Accessor::Complex';
+
+
+YAML::Active::Plugin->mk_accessors(qw(__phase));
 
 
 sub yaml_activate {

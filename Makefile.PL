@@ -1,9 +1,11 @@
 use inc::Module::Install;
 name 'YAML-Active';
 all_from 'lib/YAML/Active.pm';
+perl_version '5.006';
 
 requires 'YAML';
-requires 'Class::MethodMaker';
+requires 'Class::Accessor';
+requires 'Class::Accessor::Complex';
 
 build_requires 'Test::More';
 

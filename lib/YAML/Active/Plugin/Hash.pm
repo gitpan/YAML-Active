@@ -6,10 +6,11 @@ use warnings;
 use strict;
 use YAML::Active qw/assert_hashref hash_activate yaml_NULL/;
 
+
+our $VERSION = '1.03';
+
+
 use base 'YAML::Active::Plugin';
-
-
-our $VERSION = '1.02';
 
 
 # Differentiate between normal plugin args, args prefixed with a single
@@ -20,9 +21,7 @@ our $VERSION = '1.02';
 # We need to prefix all members with __ so they're not confused with the
 # actual args used in the YAML.
 
-use Class::MethodMaker
-    [ hash => '__hash',
-    ];
+YAML::Active::Plugin::Hash->mk_hash_accessors(qw(__hash));
 
 
 sub run_plugin {

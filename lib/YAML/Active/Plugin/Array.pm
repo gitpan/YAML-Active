@@ -6,15 +6,14 @@ use warnings;
 use strict;
 use YAML::Active qw/assert_arrayref array_activate yaml_NULL/;
 
+
+our $VERSION = '1.03';
+
+
 use base 'YAML::Active::Plugin';
 
 
-our $VERSION = '1.02';
-
-
-use Class::MethodMaker
-    [ array => '__array',
-    ];
+YAML::Active::Plugin::Array->mk_array_accessors('__array');
 
 
 sub run_plugin {
