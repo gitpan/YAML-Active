@@ -1,17 +1,22 @@
 Revision history for Perl extension YAML::Active.
 
+1.04  Do Okt 18 10:09:39 CEST 2007
+        - fixed version requirement of Test::More
+        - fixed standard yaml_activate() subs to take the $phase argument as
+          well
+
 1.03  Mi Okt 17 13:00:33 CEST 2007
-    - switched from Class::MethodMaker to Class::Accessor::Complex
+        - switched from Class::MethodMaker to Class::Accessor::Complex
 
 1.02  Do Okt  4 21:40:34 CEST 2007
-    - forgot to merge the plugin support in
-    - bumped version numbers to 0.02
+        - forgot to merge the plugin support in
+        - bumped version numbers to 0.02
 
 1.01  Do Okt  4 17:55:40 CEST 2007
-	- some bug fixes
-    - fixed documentation
+        - some bug fixes
+        - fixed documentation
 
 0.01  Fri Oct 24 10:03:21 2003
-	- original version; created by h2xs 1.22 with options
-		-XAn YAML::Active
+        - original version; created by h2xs 1.22 with options
+            -XAn YAML::Active
 

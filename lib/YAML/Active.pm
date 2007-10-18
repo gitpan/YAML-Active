@@ -8,7 +8,7 @@ use YAML ();   # no imports, we'll define our own Load() and LoadFile()
 use base 'Exporter';
 
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 
 our %EXPORT_TAGS = (
@@ -273,18 +273,18 @@ sub hash_dump ($) {
 package YAML::Active::Concat;
 YAML::Active->import(':all');
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     assert_arrayref($self);
-    return join '' => @{ array_activate($self) };
+    return join '' => @{ array_activate($self, $phase) };
 }
 
 
 package YAML::Active::Eval;
 YAML::Active->import(':all');
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     assert_hashref($self);
-    my $code_ref = eval node_activate($self->{code});
+    my $code_ref = eval node_activate($self->{code}, $phase);
     return $code_ref->();
 }
 
@@ -292,9 +292,9 @@ sub yaml_activate {
 package YAML::Active::Include;
 YAML::Active->import(':all');
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     assert_hashref($self);
-    return LoadFile(node_activate($self->{filename}));
+    return LoadFile(node_activate($self->{filename}, $phase));
 }
 
 
@@ -304,9 +304,9 @@ sub YAML::Active::PID::yaml_activate { $$ }
 package YAML::Active::Shuffle;
 YAML::Active->import(':all');
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     assert_arrayref($self);
-    return [ sort { 1-int rand 3 } @{ array_activate($self) } ];
+    return [ sort { 1-int rand 3 } @{ array_activate($self, $phase) } ];
 }
 
 
@@ -315,9 +315,9 @@ sub yaml_activate {
 package YAML::Active::Print;
 YAML::Active->import(':all');
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     assert_arrayref($self);
-    my $result = array_activate($self);
+    my $result = array_activate($self, $phase);
     print @$result;
     return yaml_NULL();
 }
@@ -329,14 +329,14 @@ YAML::Active->import(':all');
 sub mutate_value { $_[1] }
 
 sub yaml_activate {
-    my $self = shift;
+    my ($self, $phase) = @_;
     if (UNIVERSAL::isa($self, 'ARRAY')) {
         return [
             map  { ref($_) ? $_ : $self->mutate_value($_) }
-            @{ array_activate($self) }
+            @{ array_activate($self, $phase) }
         ];
     } elsif (UNIVERSAL::isa($self, 'HASH')) {
-        my $h = hash_activate($self);
+        my $h = hash_activate($self, $phase);
         $_ = $self->mutate_value($_) for grep { !ref } values %$h;
         return $h;
     }
