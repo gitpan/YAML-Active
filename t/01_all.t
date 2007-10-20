@@ -16,15 +16,16 @@ ticket_no: !perl/YAML::Active::Concat
   - !perl/YAML::Active::Eval
     code: sub { sprintf "%04d", ++(our $cnt) }
 setup:
-  1: !perl/My::YAML::Active::WritePerson
+  - !perl/My::YAML::Active::WritePerson
      person:
        personname: Foobar
        nichdl: AB123456-NICAT
-  2: !perl/My::YAML::Active::WritePerson
+  - !perl/My::YAML::Active::WritePerson
      person: !perl/YAML::Active::Include
        filename: t/testperson.yaml
 EOYAML
 
+# result set by My::YAML::Active::WritePerson in t/lib.
 our $result;  # avoid 'used only once' warning
 is($result, <<EOTXT, 'result of WritePerson plugin');
 Writing person:
@@ -47,10 +48,7 @@ my $expect = {
         personname => 'Franz Testler',
         postalcode => 'A-1090 Wien',
     },
-    setup => {
-        1 => 1,
-        2 => 1,
-    },
+    setup => [ 'Foobar', 'Franz Testler' ],
 };
 
 is_deeply($data, $expect, 'multi-activated structure');

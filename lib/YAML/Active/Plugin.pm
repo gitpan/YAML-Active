@@ -7,7 +7,7 @@ use strict;
 use YAML::Active 'yaml_NULL';
 
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 
 use base 'Class::Accessor::Complex';

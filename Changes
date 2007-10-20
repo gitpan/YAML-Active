@@ -1,5 +1,9 @@
 Revision history for Perl extension YAML::Active.
 
+1.05  Sa Okt 20 11:04:28 CEST 2007
+        - updated tests to avoid a weird issue where on some systems hash keys
+          were sorted the wrong way
+
 1.04  Do Okt 18 10:09:39 CEST 2007
         - fixed version requirement of Test::More
         - fixed standard yaml_activate() subs to take the $phase argument as

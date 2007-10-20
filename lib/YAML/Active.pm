@@ -8,7 +8,7 @@ use YAML ();   # no imports, we'll define our own Load() and LoadFile()
 use base 'Exporter';
 
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 
 our %EXPORT_TAGS = (

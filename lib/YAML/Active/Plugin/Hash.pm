@@ -7,7 +7,7 @@ use strict;
 use YAML::Active qw/assert_hashref hash_activate yaml_NULL/;
 
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 
 use base 'YAML::Active::Plugin';
