@@ -7,13 +7,13 @@ use strict;
 use YAML::Active 'yaml_NULL';
 
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
 
 use base 'Class::Accessor::Complex';
 
 
-YAML::Active::Plugin->mk_accessors(qw(__phase));
+__PACKAGE__->mk_accessors(qw(__phase));
 
 
 sub yaml_activate {

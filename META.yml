@@ -21,4 +21,4 @@ requires:
   Class::Accessor::Complex: 0
   YAML: 0
   perl: 5.6.0
-version: 1.05
+version: 1.06

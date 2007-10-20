@@ -7,7 +7,7 @@ use strict;
 use YAML::Active qw/assert_hashref hash_activate yaml_NULL/;
 
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
 
 use base 'YAML::Active::Plugin';
@@ -21,7 +21,7 @@ use base 'YAML::Active::Plugin';
 # We need to prefix all members with __ so they're not confused with the
 # actual args used in the YAML.
 
-YAML::Active::Plugin::Hash->mk_hash_accessors(qw(__hash));
+__PACKAGE__->mk_hash_accessors(qw(__hash));
 
 
 sub run_plugin {

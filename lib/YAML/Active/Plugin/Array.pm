@@ -7,13 +7,13 @@ use strict;
 use YAML::Active qw/assert_arrayref array_activate yaml_NULL/;
 
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
 
 use base 'YAML::Active::Plugin';
 
 
-YAML::Active::Plugin::Array->mk_array_accessors('__array');
+__PACKAGE__->mk_array_accessors('__array');
 
 
 sub run_plugin {
