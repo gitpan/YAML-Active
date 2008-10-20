@@ -1,29 +1,44 @@
-Revision history for Perl extension YAML::Active.
+Revision history for Perl extension YAML-Active
 
-1.06  Sa Okt 20 22:35:58 CEST 2007
-        - simplified accessor declaration
+1.08  Mon Oct 20 20:10:11 CEST 2008 (Marcel Gruenauer <marcel@cpan.org>)
+     - Changed dist style and Changes back to standard. People didn't like it -
+       the nail that sticks out gets hammered down.
+     - Added standard test files; this will also help with CPANTS.
+     - Now based on YAML::XS for speed; no more '!perl/' blessings
 
-1.05  Sa Okt 20 11:04:28 CEST 2007
-        - updated tests to avoid a weird issue where on some systems hash keys
-          were sorted the wrong way
+1.07  Thu, 29 May 2008 12:09:24 -0000 (Marcel Gruenauer <marcel@cpan.org>)
+     - Converted Changes file to YAML style
+     - .shipit: added Twitter step
+     - Makefile.PL: added auto_install() and process_templates()
+     - lib/*: converted to template
+     - updated MANIFEST
+     - updated t/perlcriticrc
+     - moved generated documentation of interited methods to after
+       documentation of this class' methods so the manpage is more readable
+     - .shipit: fixed svk.tagpattern
+     - tags: NEWFEATURE
 
-1.04  Do Okt 18 10:09:39 CEST 2007
-        - fixed version requirement of Test::More
-        - fixed standard yaml_activate() subs to take the $phase argument as
-          well
+1.06  Sat, 20 Oct 2007 22:35:58 +0200 (Marcel Gruenauer <marcel@cpan.org>)
+     - simplified accessor declaration
 
-1.03  Mi Okt 17 13:00:33 CEST 2007
-        - switched from Class::MethodMaker to Class::Accessor::Complex
+1.05  Sat, 20 Oct 2007 11:04:28 +0200 (Marcel Gruenauer <marcel@cpan.org>)
+     - updated tests to avoid a weird issue where on some systems hash keys
+       were sorted the wrong way
 
-1.02  Do Okt  4 21:40:34 CEST 2007
-        - forgot to merge the plugin support in
-        - bumped version numbers to 0.02
+1.04  Thu, 18 Oct 2007 10:09:39 +0200 (Marcel Gruenauer <marcel@cpan.org>)
+     - fixed version requirement of Test::More
+     - fixed standard yaml_activate() subs to take the $phase argument as well
 
-1.01  Do Okt  4 17:55:40 CEST 2007
-        - some bug fixes
-        - fixed documentation
+1.03  Wed, 17 Oct 2007 13:00:33 +0200 (Marcel Gruenauer <marcel@cpan.org>)
+     - switched from Class::MethodMaker to Class::Accessor::Complex
 
-0.01  Fri Oct 24 10:03:21 2003
-        - original version; created by h2xs 1.22 with options
-            -XAn YAML::Active
+1.02  Thu, 04 Oct 2007 21:40:34 +0200 (Marcel Gruenauer <marcel@cpan.org>)
+     - forgot to merge the plugin support in
+     - bumped version numbers to 0.02
 
+1.01  Thu, 04 Oct 2007 17:55:40 +0200 (Marcel Gruenauer <marcel@cpan.org>)
+     - some bug fixes
+     - fixed documentation
+
+0.01  Fri, 24 Oct 2003 10:03:21 +0100 (Marcel Gruenauer <marcel@cpan.org>)
+     - original version

@@ -2,13 +2,13 @@ package YAML::Active;
 
 use strict;
 use warnings;
-use YAML ();   # no imports, we'll define our own Load() and LoadFile()
+use YAML::XS ();   # no imports, we'll define our own Load() and LoadFile()
 
 
 use base 'Exporter';
 
 
-our $VERSION = '1.06';
+our $VERSION = '1.08';
 
 
 our %EXPORT_TAGS = (
@@ -117,7 +117,9 @@ sub node_activate ($$) {
 #     }
 
     if (my $class = ref $node) {
-        if (!$node->can('yaml_activate') && index($node,'YAML::Active') != -1) {
+        if (!$class->can('yaml_activate') &&
+            index($class, 'YAML::Active') != -1) {
+
             eval "require $class";
             die $@ if $@;
         }
@@ -165,13 +167,13 @@ sub node_activate ($$) {
 
 sub Load_inactive {
     my $node = shift;
-    YAML::Load($node);
+    YAML::XS::Load($node);
 }
 
 
 sub Load {
     my ($node, $phase) = @_;
-    node_activate(YAML::Load($node), $phase)
+    node_activate(YAML::XS::Load($node), $phase)
     #my $x = node_activate(Load_inactive($node), $phase);
     #use Data::Dumper; print Dumper $x;
     #if (ref $x->{setup} eq 'HASH') {
@@ -191,7 +193,7 @@ sub Reload {
 
 sub LoadFile {
     my ($node, $phase) = @_;
-    node_activate(YAML::LoadFile($node), $phase)
+    node_activate(YAML::XS::LoadFile($node), $phase)
 }
 
 
@@ -215,8 +217,9 @@ sub yaml_NULL { bless {}, NULL }
 
 sub Dump {
     my ($node, %args) = @_;
-    local $YAML::ForceBlock = exists $args{ForceBlock} ? $args{ForceBlock} : 1;
-    my $dump = YAML::Dump(node_dump($node));
+    local $YAML::XS::ForceBlock =
+        exists $args{ForceBlock} ? $args{ForceBlock} : 1;
+    my $dump = YAML::XS::Dump(node_dump($node));
 
     our %prepare_dump;
     $_->can('finish_dump') && $_->finish_dump for keys %prepare_dump;
@@ -358,6 +361,8 @@ sub mutate_value { lc $_[1] }
 
 __END__
 
+
+
 =head1 NAME
 
 YAML::Active - Combine data and logic in YAML
@@ -366,24 +371,24 @@ YAML::Active - Combine data and logic in YAML
 
   use YAML::Active;
   my $data = Load(<<'EOYAML');
-  pid: !perl/YAML::Active::PID
+  pid: /YAML::Active::PID
     doit:
   foo: bar
-  include_test: !perl/YAML::Active::Include
+  include_test: /YAML::Active::Include
       filename: t/testperson.yaml
-  ticket_no: !perl/YAML::Active::Concat
+  ticket_no: /YAML::Active::Concat
     - '20010101.1234'
-    - !perl/YAML::Active::PID
+    - /YAML::Active::PID
       doit:
-    - !perl/YAML::Active::Eval
+    - /YAML::Active::Eval
       code: sub { sprintf "%04d", ++(our $cnt) }
   setup:
-    1: !perl/Registry::YAML::Active::WritePerson
+    1: /Registry::YAML::Active::WritePerson
        person:
          personname: Foobar
          handle: AB123456-NICAT
-    2: !perl/Registry::YAML::Active::WritePerson
-       person: !perl/YAML::Active::Include
+    2: /Registry::YAML::Active::WritePerson
+       person: /YAML::Active::Include
          filename: t/testperson.yaml
   EOYAML
 
@@ -413,7 +418,7 @@ C<yaml_active()> method and calling that method on the given node.
 
 An example:
 
-  some_string: !perl/YAML::Active::Concat
+  some_string: /YAML::Active::Concat
     - foo
     - bar
     - baz
@@ -433,11 +438,11 @@ structure, the result is equivalent to
 Because C<YAML::Active::Concat> also activates all of its arguments,
 you can nest activation logic:
 
-  some_string !perl/YAML::Active::Concat
+  some_string /YAML::Active::Concat
     - foo
-    - !perl/YAML::Active::PID
+    - /YAML::Active::PID
       doit:
-    - !perl/YAML::Active::Eval
+    - /YAML::Active::Eval
       code: sub { sprintf "%04d", ++(our $cnt) }
 
 This active YAML uses two more plugins, C<YAML::Active::PID> and
@@ -575,7 +580,7 @@ arguments).
 
 Example:
 
-  - !perl/YAML::Active::Eval
+  - /YAML::Active::Eval
     code: sub { sprintf "%04d", ++(our $cnt) }
 
 Result:
@@ -593,7 +598,7 @@ are activated as well.
 
 Example:
 
-  description: !perl/YAML::Active::Include
+  description: /YAML::Active::Include
     filename: description.yaml
 
 Result:
@@ -607,7 +612,7 @@ Returns the current process id.
 
 Example:
 
-  the_pid: !perl/YAML::Active::PID
+  the_pid: /YAML::Active::PID
     whatever:
 
 Result (for example):
@@ -626,7 +631,7 @@ activated original elements in random order.
 
 Example:
 
-  data: !perl/YAML::Active::Shuffle
+  data: /YAML::Active::Shuffle
         - 1
         - 2
         - 3
@@ -653,7 +658,7 @@ Example:
 
   data:
     - foo
-    - !perl/YAML::Active::Print
+    - /YAML::Active::Print
        - '# Hello, world!'
        - 'Goodbye, world!'
     - baz
@@ -674,7 +679,7 @@ or hash references, but passes them through unaltered.
 
 Example:
 
-  data: !perl/YAML::Active::uc
+  data: /YAML::Active::uc
     - Hello
     - world and
     - one: GOoD
@@ -719,7 +724,7 @@ to provide a C<yaml_activate()> method that does the work.
 
 Now you can do:
 
-  result: !perl/My::YAML::Active::Add
+  result: /My::YAML::Active::Add
     - 1
     - 2
     - 3
@@ -733,17 +738,11 @@ And the result would be:
 This could be the beginning of a YAML-based stack machine or at least
 an RPN calculator...
 
-=head1 TAGS
-
-If you talk about this module in blogs, on del.icio.us or anywhere else,
-please use the C<yamlactive> tag.
-
 =head1 BUGS AND LIMITATIONS
 
 No bugs have been reported.
 
-Please report any bugs or feature requests to
-C<bug-yaml-active@rt.cpan.org>, or through the web interface at
+Please report any bugs or feature requests through the web interface at
 L<http://rt.cpan.org>.
 
 =head1 INSTALLATION
@@ -756,16 +755,17 @@ The latest version of this module is available from the Comprehensive Perl
 Archive Network (CPAN). Visit <http://www.perl.com/CPAN/> to find a CPAN
 site near you. Or see <http://www.perl.com/CPAN/authors/id/M/MA/MARCEL/>.
 
-=head1 AUTHOR
+=head1 AUTHORS
 
 Marcel GrE<uuml>nauer, C<< <marcel@cpan.org> >>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003-2007 by Marcel GrE<uuml>nauer
+Copyright 2003-2008 by the authors.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
+
 
 =cut
 

@@ -4,24 +4,24 @@ use Test::More tests => 12;
 use lib 't/lib';
 
 my $data = Load(<<'EOYAML');
-pid: !perl/YAML::Active::PID
+pid: !YAML::Active::PID
   doit:
 foo: bar
-include_test: !perl/YAML::Active::Include
+include_test: !YAML::Active::Include
   filename: t/testperson.yaml
-ticket_no: !perl/YAML::Active::Concat
+ticket_no: !YAML::Active::Concat
   - '20010101.1234'
-  - !perl/YAML::Active::PID
+  - !YAML::Active::PID
     doit:
-  - !perl/YAML::Active::Eval
+  - !YAML::Active::Eval
     code: sub { sprintf "%04d", ++(our $cnt) }
 setup:
-  - !perl/My::YAML::Active::WritePerson
+  - !My::YAML::Active::WritePerson
      person:
        personname: Foobar
        nichdl: AB123456-NICAT
-  - !perl/My::YAML::Active::WritePerson
-     person: !perl/YAML::Active::Include
+  - !My::YAML::Active::WritePerson
+     person: !YAML::Active::Include
        filename: t/testperson.yaml
 EOYAML
 
@@ -55,7 +55,7 @@ is_deeply($data, $expect, 'multi-activated structure');
 
 
 my $shuffle = Load(<<'EOYAML');
-data: !perl/YAML::Active::Shuffle
+data: !YAML::Active::Shuffle
       - 1
       - 2
       - 3
@@ -71,7 +71,7 @@ ok(eq_set($shuffle->{data}, [ reverse 1..9 ]), 'shuffle');
 
 
 eval { my $error = Load(<<'EOYAML') };
-data: !perl/YAML::Active::Concat
+data: !YAML::Active::Concat
        personname: Foobar
        nichdl: AB123456-NICAT
 EOYAML
@@ -84,7 +84,7 @@ sub YAML::Active::NullTester::yaml_activate { YAML::Active::yaml_NULL }
 
 my $null_hash = Load(<<'EOYAML');
 foo: 42
-bar: !perl/YAML::Active::NullTester
+bar: !YAML::Active::NullTester
   frobnule: flurble
 baz: hello
 EOYAML
@@ -95,7 +95,7 @@ is_deeply($null_hash, { foo => 42, baz => 'hello' }, 'null hash value');
 
 my $null_array = Load(<<'EOYAML');
 - foo
-- !perl/YAML::Active::NullTester
+- !YAML::Active::NullTester
   - bar
 - baz
 EOYAML
@@ -106,7 +106,7 @@ is_deeply($null_array, [ qw{foo baz} ], 'null array value');
 
 my $printer = Load(<<'EOYAML');
 - foo
-- !perl/YAML::Active::Print
+- !YAML::Active::Print
    - '# Hello, world!'
    - 'Goodbye, world!'
 - baz
@@ -118,7 +118,7 @@ is_deeply($printer, [ qw{foo baz} ], 'print');
 
 
 my $uc_array = Load(<<'EOYAML');
-data: !perl/YAML::Active::uc
+data: !YAML::Active::uc
   - Hello
   - world and
   - one: GOoD
@@ -140,7 +140,7 @@ is_deeply($uc_array, $expect, 'uppercase array values');
 
 
 my $uc_hash = Load(<<'EOYAML');
-- !perl/YAML::Active::uc
+- !YAML::Active::uc
   foo:  Hello
   bar:  world and
   xxx:
@@ -162,7 +162,7 @@ is_deeply($uc_hash, $expect, 'uppercase hash values');
 
 
 my $lc_array = Load(<<'EOYAML');
-data: !perl/YAML::Active::lc
+data: !YAML::Active::lc
       - Hello
       - world and
       - GOODBYE
@@ -183,7 +183,7 @@ is_deeply($lc_array, $expect, 'uppercase array values');
 
 
 my $lc_hash = Load(<<'EOYAML');
-- !perl/YAML::Active::lc
+- !YAML::Active::lc
   foo:  Hello
   bar:  world and
   baz:  GOODBYE
@@ -200,7 +200,7 @@ is_deeply($lc_hash, $expect, 'uppercase hash values');
 
 
 my $add = Load(<<'EOYAML');
-result: !perl/My::YAML::Active::Add
+result: !My::YAML::Active::Add
   - 1
   - 2
   - 3

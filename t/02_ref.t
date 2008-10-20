@@ -18,7 +18,7 @@ TODO: {
 
 
 $data = Load(<<'EOYAML');
-x: &REF !perl/YAML::Active::Concat
+x: &REF !YAML::Active::Concat
   - one
   - two
   - three
