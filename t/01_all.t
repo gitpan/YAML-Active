@@ -1,8 +1,6 @@
 use YAML::Active 'Load';
 use Test::More tests => 12;
-
 use lib 't/lib';
-
 my $data = Load(<<'EOYAML');
 pid: !YAML::Active::PID
   doit:
@@ -26,7 +24,7 @@ setup:
 EOYAML
 
 # result set by My::YAML::Active::WritePerson in t/lib.
-our $result;  # avoid 'used only once' warning
+our $result;    # avoid 'used only once' warning
 is($result, <<EOTXT, 'result of WritePerson plugin');
 Writing person:
  nichdl => AB123456-NICAT
@@ -38,7 +36,6 @@ Writing person:
 EOTXT
 
 # use Data::Dumper; print Dumper $data;
-
 my $expect = {
     pid          => $$,
     foo          => 'bar',
@@ -50,10 +47,7 @@ my $expect = {
     },
     setup => [ 'Foobar', 'Franz Testler' ],
 };
-
 is_deeply($data, $expect, 'multi-activated structure');
-
-
 my $shuffle = Load(<<'EOYAML');
 data: !YAML::Active::Shuffle
       - 1
@@ -66,44 +60,29 @@ data: !YAML::Active::Shuffle
       - 8
       - 9
 EOYAML
-
-ok(eq_set($shuffle->{data}, [ reverse 1..9 ]), 'shuffle');
-
-
-eval { my $error = Load(<<'EOYAML') };
+ok(eq_set($shuffle->{data}, [ reverse 1 .. 9 ]), 'shuffle');
+eval {
+    my $error = Load(<<'EOYAML') };
 data: !YAML::Active::Concat
        personname: Foobar
        nichdl: AB123456-NICAT
 EOYAML
-
 like($@, qr/^YAML::Active::Concat expects an array ref at/, 'assert_arrayref');
-
-
-
 sub YAML::Active::NullTester::yaml_activate { YAML::Active::yaml_NULL }
-
 my $null_hash = Load(<<'EOYAML');
 foo: 42
 bar: !YAML::Active::NullTester
   frobnule: flurble
 baz: hello
 EOYAML
-
 is_deeply($null_hash, { foo => 42, baz => 'hello' }, 'null hash value');
-
-
-
 my $null_array = Load(<<'EOYAML');
 - foo
 - !YAML::Active::NullTester
   - bar
 - baz
 EOYAML
-
-is_deeply($null_array, [ qw{foo baz} ], 'null array value');
-
-
-
+is_deeply($null_array, [qw{foo baz}], 'null array value');
 my $printer = Load(<<'EOYAML');
 - foo
 - !YAML::Active::Print
@@ -111,12 +90,8 @@ my $printer = Load(<<'EOYAML');
    - 'Goodbye, world!'
 - baz
 EOYAML
-
 print "\n";
-is_deeply($printer, [ qw{foo baz} ], 'print');
-
-
-
+is_deeply($printer, [qw{foo baz}], 'print');
 my $uc_array = Load(<<'EOYAML');
 data: !YAML::Active::uc
   - Hello
@@ -125,20 +100,10 @@ data: !YAML::Active::uc
     two: byE
   - wOrLd!
 EOYAML
-
-$expect = {
-    data => [
-        'HELLO',
-        'WORLD AND',
-        { one => 'GOoD', two => 'byE' },
-        'WORLD!'
-    ],
-};
-
+$expect =
+  { data => [ 'HELLO', 'WORLD AND', { one => 'GOoD', two => 'byE' }, 'WORLD!' ],
+  };
 is_deeply($uc_array, $expect, 'uppercase array values');
-
-
-
 my $uc_hash = Load(<<'EOYAML');
 - !YAML::Active::uc
   foo:  Hello
@@ -148,19 +113,14 @@ my $uc_hash = Load(<<'EOYAML');
    - two
   baz:  GOODBYE
 EOYAML
-
-$expect = [ {
-    foo => 'HELLO',
-    bar => 'WORLD AND',
-    xxx => [ qw/one two/ ],
-    baz => 'GOODBYE',
-} ];
-
+$expect = [
+    {   foo => 'HELLO',
+        bar => 'WORLD AND',
+        xxx => [qw/one two/],
+        baz => 'GOODBYE',
+    }
+];
 is_deeply($uc_hash, $expect, 'uppercase hash values');
-
-
-
-
 my $lc_array = Load(<<'EOYAML');
 data: !YAML::Active::lc
       - Hello
@@ -168,37 +128,21 @@ data: !YAML::Active::lc
       - GOODBYE
       - wOrLd!
 EOYAML
-
-$expect = {
-    data => [
-        'hello',
-        'world and',
-        'goodbye',
-        'world!'
-    ],
-};
-
+$expect = { data => [ 'hello', 'world and', 'goodbye', 'world!' ], };
 is_deeply($lc_array, $expect, 'uppercase array values');
-
-
-
 my $lc_hash = Load(<<'EOYAML');
 - !YAML::Active::lc
   foo:  Hello
   bar:  world and
   baz:  GOODBYE
 EOYAML
-
-$expect = [ {
-    foo => 'hello',
-    bar => 'world and',
-    baz => 'goodbye',
-} ];
-
+$expect = [
+    {   foo => 'hello',
+        bar => 'world and',
+        baz => 'goodbye',
+    }
+];
 is_deeply($lc_hash, $expect, 'uppercase hash values');
-
-
-
 my $add = Load(<<'EOYAML');
 result: !My::YAML::Active::Add
   - 1
@@ -207,5 +151,4 @@ result: !My::YAML::Active::Add
   - 7
   - 15
 EOYAML
-
 is_deeply($add, { result => 28 }, 'add');

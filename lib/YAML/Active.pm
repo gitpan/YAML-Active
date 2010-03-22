@@ -1,49 +1,37 @@
-package YAML::Active;
-
+use 5.008;
 use strict;
 use warnings;
-use YAML::XS ();   # no imports, we'll define our own Load() and LoadFile()
 
-
-use base 'Exporter';
-
-
-our $VERSION = '1.08';
-
-
+package YAML::Active;
+our $VERSION = '1.100810';
+# ABSTRACT: Combine data and logic in YAML
+use YAML::XS ();    # no imports, we'll define our own Load() and LoadFile()
+use Exporter qw(import);
 our %EXPORT_TAGS = (
-    load   => [ qw{Load Load_inactive Reload LoadFile} ],
-    dump   => [ qw{Dump} ],
-    active => [ qw{node_activate array_activate hash_activate} ],
-    assert => [ qw{assert_arrayref assert_hashref} ],
-    null   => [ qw{yaml_NULL NULL} ],
+    load   => [qw{Load Load_inactive Reload LoadFile}],
+    dump   => [qw{Dump}],
+    active => [qw{node_activate array_activate hash_activate}],
+    assert => [qw{assert_arrayref assert_hashref}],
+    null   => [qw{yaml_NULL NULL}],
 );
 our @EXPORT_OK = @{ $EXPORT_TAGS{all} = [ map { @$_ } values %EXPORT_TAGS ] };
-
-
 use constant NULL => 'YAML::Active::NULL';
-
 
 sub should_process_node_in_phase {
     my ($node, $phase) = @_;
 
-    # If we're given a phase, only process nodes that have want to run in that
-    # phase. If we're not given a phase, only process nodes that don't want to
-    # run in a specific phase.
-
     if (defined $phase) {
-        return 0 unless
-            exists $node->{_phase} && $phase eq $node->{_phase};
+        return 0
+          unless exists $node->{_phase} && $phase eq $node->{_phase};
     } else {
         return 0 if exists $node->{_phase};
     }
-
     return 1;
 }
 
-
 sub array_activate ($$) {
     my ($node, $phase) = @_;
+
     #my @result;
     #my @node = @$node;
     #for my $index (0..$#node) {
@@ -52,36 +40,28 @@ sub array_activate ($$) {
     #    push @result, $activated;
     #}
     #\@result;
-
-    [
-        grep { ref ne NULL }
-        map  { node_activate($_, $phase) }
-        @$node
-    ]
+    [   grep { ref ne NULL }
+        map { node_activate($_, $phase) } @$node
+    ];
 }
-
 
 sub hash_activate ($$) {
     my ($node, $phase) = @_;
-
     return unless should_process_node_in_phase($node, $phase);
     return {
         map {
             my $val = node_activate($node->{$_}, $phase);
             ref $val eq NULL ? () : ($_ => $val)
-        } keys %$node
+          } keys %$node
     };
 }
 
-
 sub node_activate ($$) {
     my ($node, $phase) = @_;
-
     return array_activate($node, $phase) if ref $node eq 'ARRAY';
-    return hash_activate($node, $phase)  if ref $node eq 'HASH';
+    return hash_activate($node, $phase) if ref $node eq 'HASH';
 
     # FIXME:
-
     # don't just do
     #
     #   return array_activate($node, $phase)
@@ -97,136 +77,118 @@ sub node_activate ($$) {
     # "{ foo => 1 }" hash ref and so gets replaced independently as well. This
     # means we end up not with a reference but with two reference, each
     # pointing to the same cloned hash.
-    
-#     if (ref $node eq 'ARRAY') {
-#         my $result = array_activate($node, $phase);
-#         if (UNIVERSAL::isa($result, 'ARRAY')) {
-#             @$node = @$result;
-#             return $node;
-#         } else {
-#             return $result;
-#         }
-#     } elsif (ref $node eq 'HASH') {
-#         my $result = hash_activate($node, $phase);
-#         if (UNIVERSAL::isa($result, 'HASH')) {
-#             %$node = %$result;
-#             return $node;
-#         } else {
-#             return $result;
-#         }
-#     }
-
+    #     if (ref $node eq 'ARRAY') {
+    #         my $result = array_activate($node, $phase);
+    #         if (UNIVERSAL::isa($result, 'ARRAY')) {
+    #             @$node = @$result;
+    #             return $node;
+    #         } else {
+    #             return $result;
+    #         }
+    #     } elsif (ref $node eq 'HASH') {
+    #         my $result = hash_activate($node, $phase);
+    #         if (UNIVERSAL::isa($result, 'HASH')) {
+    #             %$node = %$result;
+    #             return $node;
+    #         } else {
+    #             return $result;
+    #         }
+    #     }
     if (my $class = ref $node) {
-        if (!$class->can('yaml_activate') &&
-            index($class, 'YAML::Active') != -1) {
-
+        if (!$class->can('yaml_activate')
+            && index($class, 'YAML::Active') != -1) {
             eval "require $class";
             die $@ if $@;
         }
-
         if ($node->can('yaml_activate')) {
             return $node->yaml_activate($phase);
         } else {
+
             # it's a blessed reference, but it can't yaml_activate, so dig
             # deeper
-
             my $activated =
-                UNIVERSAL::isa($node, 'ARRAY') ? array_activate($node, $phase) :
-                UNIVERSAL::isa($node, 'HASH' ) ? hash_activate($node, $phase)  :
-                $node;
+                UNIVERSAL::isa($node, 'ARRAY') ? array_activate($node, $phase)
+              : UNIVERSAL::isa($node, 'HASH') ? hash_activate($node, $phase)
+              :                                 $node;
             return bless $activated, ref $node;
 
-#             if (UNIVERSAL::isa($node, 'ARRAY')) {
-#                 my $result = array_activate($node, $phase);
-#                 if (UNIVERSAL::isa($result, 'ARRAY')) {
-#                     # the blessing stays the same
-#                     @$node = @$result;
-#                     return $node;
-#                 } else {
-#                     return bless $result, ref $node;
-#                 }
-#             } elsif (UNIVERSAL::isa($node, 'HASH')) {
-#                 my $result = hash_activate($node, $phase);
-#                 if (UNIVERSAL::isa($result, 'HASH')) {
-#                     # the blessing stays the same
-#                     %$node = %$result;
-#                     return $node;
-#                 } else {
-#                     return bless $result, ref $node;
-#                 }
-#             }
-#
-#             return $node;
+            #             if (UNIVERSAL::isa($node, 'ARRAY')) {
+            #                 my $result = array_activate($node, $phase);
+            #                 if (UNIVERSAL::isa($result, 'ARRAY')) {
+            #                     # the blessing stays the same
+            #                     @$node = @$result;
+            #                     return $node;
+            #                 } else {
+            #                     return bless $result, ref $node;
+            #                 }
+            #             } elsif (UNIVERSAL::isa($node, 'HASH')) {
+            #                 my $result = hash_activate($node, $phase);
+            #                 if (UNIVERSAL::isa($result, 'HASH')) {
+            #                     # the blessing stays the same
+            #                     %$node = %$result;
+            #                     return $node;
+            #                 } else {
+            #                     return bless $result, ref $node;
+            #                 }
+            #             }
+            #
+            #             return $node;
         }
     }
     return $node;
 }
 
-
 # pass through
-
 sub Load_inactive {
     my $node = shift;
     YAML::XS::Load($node);
 }
 
-
 sub Load {
     my ($node, $phase) = @_;
     node_activate(YAML::XS::Load($node), $phase)
-    #my $x = node_activate(Load_inactive($node), $phase);
-    #use Data::Dumper; print Dumper $x;
-    #if (ref $x->{setup} eq 'HASH') {
-    #    printf "foo [%s]\n", $x->{setup}{foo};
-    #    printf "bar [%s]\n", $x->{setup}{bar};
-    #}
-    #$x;
+
+      #my $x = node_activate(Load_inactive($node), $phase);
+      #use Data::Dumper; print Dumper $x;
+      #if (ref $x->{setup} eq 'HASH') {
+      #    printf "foo [%s]\n", $x->{setup}{foo};
+      #    printf "bar [%s]\n", $x->{setup}{bar};
+      #}
+      #$x;
 }
-
-
 
 sub Reload {
     my ($node, $phase) = @_;
     Load(Dump($node), $phase);
 }
 
-
 sub LoadFile {
     my ($node, $phase) = @_;
-    node_activate(YAML::XS::LoadFile($node), $phase)
+    node_activate(YAML::XS::LoadFile($node), $phase);
 }
-
 
 sub assert_arrayref {
     return if UNIVERSAL::isa($_[0], 'ARRAY');
     die sprintf "%s expects an array ref", (caller)[0];
 }
 
-
 sub assert_hashref {
     return if UNIVERSAL::isa($_[0], 'HASH');
     die sprintf "%s expects a hash ref", (caller)[0];
 }
-
-
 sub yaml_NULL { bless {}, NULL }
-
 
 # end of activation-related code
 # start of dump-related code
-
 sub Dump {
     my ($node, %args) = @_;
     local $YAML::XS::ForceBlock =
-        exists $args{ForceBlock} ? $args{ForceBlock} : 1;
+      exists $args{ForceBlock} ? $args{ForceBlock} : 1;
     my $dump = YAML::XS::Dump(node_dump($node));
-
     our %prepare_dump;
     $_->can('finish_dump') && $_->finish_dump for keys %prepare_dump;
-
     $dump;
 }
-
 
 sub node_dump ($) {
     my $node = shift;
@@ -237,27 +199,21 @@ sub node_dump ($) {
             eval "require $class";
             die $@ if $@;
         }
-
         if ($node->can('prepare_dump')) {
             our %prepare_dump;
             $prepare_dump{ ref $node } ||= $node->prepare_dump;
         }
-
         return $node->can('yaml_dump') ? $node->yaml_dump : $node;
     }
     return $node;
 }
 
-
 sub array_dump ($) {
     my $node = shift;
-    [
-        grep { ref ne NULL }
-        map  { node_dump($_) }
-        @$node
-    ]
+    [   grep { ref ne NULL }
+        map { node_dump($_) } @$node
+    ];
 }
-
 
 sub hash_dump ($) {
     my $node = shift;
@@ -265,25 +221,24 @@ sub hash_dump ($) {
         map {
             my $val = node_dump($node->{$_});
             ref $val eq NULL ? () : ($_ => $val)
-        } keys %$node
+          } keys %$node
     };
 }
 
-
-
-
-
 package YAML::Active::Concat;
+our $VERSION = '1.100810';
 YAML::Active->import(':all');
+
 sub yaml_activate {
     my ($self, $phase) = @_;
     assert_arrayref($self);
     return join '' => @{ array_activate($self, $phase) };
 }
 
-
 package YAML::Active::Eval;
+our $VERSION = '1.100810';
 YAML::Active->import(':all');
+
 sub yaml_activate {
     my ($self, $phase) = @_;
     assert_hashref($self);
@@ -291,32 +246,32 @@ sub yaml_activate {
     return $code_ref->();
 }
 
-
 package YAML::Active::Include;
+our $VERSION = '1.100810';
 YAML::Active->import(':all');
+
 sub yaml_activate {
     my ($self, $phase) = @_;
     assert_hashref($self);
     return LoadFile(node_activate($self->{filename}, $phase));
 }
-
-
 sub YAML::Active::PID::yaml_activate { $$ }
 
-
 package YAML::Active::Shuffle;
+our $VERSION = '1.100810';
 YAML::Active->import(':all');
+
 sub yaml_activate {
     my ($self, $phase) = @_;
     assert_arrayref($self);
-    return [ sort { 1-int rand 3 } @{ array_activate($self, $phase) } ];
+    return [ sort { 1 - int rand 3 } @{ array_activate($self, $phase) } ];
 }
 
-
 # example of a side-effect-only plugin
-
 package YAML::Active::Print;
+our $VERSION = '1.100810';
 YAML::Active->import(':all');
+
 sub yaml_activate {
     my ($self, $phase) = @_;
     assert_arrayref($self);
@@ -325,19 +280,16 @@ sub yaml_activate {
     return yaml_NULL();
 }
 
-
 package YAML::Active::ValueMutator;
+our $VERSION = '1.100810';
 YAML::Active->import(':all');
-
 sub mutate_value { $_[1] }
 
 sub yaml_activate {
     my ($self, $phase) = @_;
     if (UNIVERSAL::isa($self, 'ARRAY')) {
-        return [
-            map  { ref($_) ? $_ : $self->mutate_value($_) }
-            @{ array_activate($self, $phase) }
-        ];
+        return [ map { ref($_) ? $_ : $self->mutate_value($_) }
+              @{ array_activate($self, $phase) } ];
     } elsif (UNIVERSAL::isa($self, 'HASH')) {
         my $h = hash_activate($self, $phase);
         $_ = $self->mutate_value($_) for grep { !ref } values %$h;
@@ -346,26 +298,33 @@ sub yaml_activate {
     return $self;    # shouldn't get here
 }
 
-
 package YAML::Active::uc;
+our $VERSION = '1.100810';
 our @ISA = 'YAML::Active::ValueMutator';
 sub mutate_value { uc $_[1] }
 
-
 package YAML::Active::lc;
+our $VERSION = '1.100810';
 our @ISA = 'YAML::Active::ValueMutator';
 sub mutate_value { lc $_[1] }
-
-
 1;
 
+
 __END__
-
-
+=pod
 
 =head1 NAME
 
 YAML::Active - Combine data and logic in YAML
+
+=head1 VERSION
+
+version 1.100810
+
+=for stopwords LoadFile RPN
+
+=for test_synopsis 1;
+__END__
 
 =head1 SYNOPSIS
 
@@ -465,41 +424,31 @@ node (that is, provide a transfer type) into a package that's not an
 activation plugin, be sure that the package name doesn't contain the
 string C<YAML::Active>.
 
-=head2 EXPORT
+=head1 FUNCTIONS
 
-Nothing is exported by default, but you can request each of the
-following subroutines individually or grouped by tags. The tags and
-their symbols are, in YAML notation:
-
-  load:
-    - Load
-    - LoadFile
-  active:
-    - node_activate
-    - array_activate
-    - hash_activate
-  assert:
-    - assert_arrayref
-    - assert_hashref
-  null:
-    - yaml_NULL
-    - NULL
-
-There is also the C<all> tag, which contains all of the above symbols.
-
-=over 4
-
-=item C<Load()>
+=head2 Load
 
 Like C<YAML>'s C<Load()>, but activates the data structure after
 loading it and returns the activated data structure.
 
-=item C<LoadFile()>
+=head2 Load_inactive
+
+Like C<YAML>'s C<Load()>, it doesn't activate the data structure.
+
+=head2 Dump
+
+Like C<YAML>'s C<Dump()>.
+
+=head2 Reload
+
+Dumps, then loads the data structure and returns the result.
+
+=head2 LoadFile
 
 Like C<YAML>'s C<LoadFile()>, but activates the data structure after
 loading it and returns the activated data structure.
 
-=item C<node_activate()>
+=head2 node_activate
 
 Expects a reference and recursively activates it, returning the
 resulting reference.
@@ -524,42 +473,89 @@ Otherwise it just returns the node as it could be an unblessed scalar
 or a reference blessed into a package that's got nothing to do with
 activation.
 
-=item C<array_activate()>
+=head2 array_activate
 
 Takes an array reference and activates every array element in turn,
 then returns a new array references containing the results. Null
 elements (that is, elements blessed into C<YAML::Active::NULL>) are
 ignored.
 
-=item C<hash_activate()>
+=head2 hash_activate
 
 Takes a hash reference and activates every value, then returns a new
 hash references containing the results (the hash keys are left alone).
 Keys with null values (that is, values blessed into
 C<YAML::Active::NULL>) are ignored.
 
-=item C<assert_arrayref()>
+=head2 assert_arrayref
 
 Checks that its argument is an array reference. If not, C<die()>s
 reporting the caller.
 
-=item C<assert_hashref()>
+=head2 assert_hashref
 
 Checks that its argument is a hash reference. If not, C<die()>s
 reporting the caller.
 
-=item C<yaml_NULL()>
+=head2 yaml_NULL
 
 Returns an empty hash reference blessed into the C<YAML::Active::NULL>
 package. This function is used by side-effect-only plugins that don't
 want to have a trace of their existence left in the activated data
 structure. For an example see the C<YAML::Active::Print>.
 
-=item C<NULL()>
+=head2 NULL
 
 This is a constant with the value C<YAML::Active::NULL>.
 
-=back
+=head2 node_dump
+
+Dumps a data structure node. It is used by C<Dump()>. It calls C<array_dump()>
+and C<hash_dump()> as necessary. For scalar nodes, if the node is a blessed
+reference and the package it is blessed into has a C<prepare_dump()> function,
+that function is called. Then, if the package has a C<yaml_dump()> function,
+that function is called as well. After the recursive dump is finished, each
+package that had a C<prepare_dump()> function is checked for a
+C<finish_dump()> function, which is called if it exists.
+
+=head2 array_dump
+
+Dumps an array reference node. It is called by C<node_dump()> and calls
+C<node_dump()> itself on the array elements.
+
+=head2 hash_dump
+
+Dumps a hash reference node. It is called by C<node_dump()> and calls
+C<node_dump()> itself on the hash values.
+
+=head2 should_process_node_in_phase
+
+Takes as arguments a node and optionally a phase. If the phase argument is
+given, return true for those nodes that have this phase requirements. If the
+phase argument is not given, return true for those nodes that don't have a
+phase requirements.
+
+=head1 EXPORT
+
+Nothing is exported by default, but you can request each of the subroutines
+individually or grouped by tags. The tags and their symbols are, in YAML
+notation:
+
+  load:
+    - Load
+    - LoadFile
+  active:
+    - node_activate
+    - array_activate
+    - hash_activate
+  assert:
+    - assert_arrayref
+    - assert_hashref
+  null:
+    - yaml_NULL
+    - NULL
+
+There is also the C<all> tag, which contains all of the above symbols.
 
 =head1 DEFAULT PLUGINS
 
@@ -738,34 +734,39 @@ And the result would be:
 This could be the beginning of a YAML-based stack machine or at least
 an RPN calculator...
 
+=head1 INSTALLATION
+
+See perlmodinstall for information and options on installing Perl modules.
+
 =head1 BUGS AND LIMITATIONS
 
 No bugs have been reported.
 
 Please report any bugs or feature requests through the web interface at
-L<http://rt.cpan.org>.
-
-=head1 INSTALLATION
-
-See perlmodinstall for information and options on installing Perl modules.
+L<http://rt.cpan.org/Public/Dist/Display.html?Name=YAML-Active>.
 
 =head1 AVAILABILITY
 
 The latest version of this module is available from the Comprehensive Perl
-Archive Network (CPAN). Visit <http://www.perl.com/CPAN/> to find a CPAN
-site near you. Or see <http://www.perl.com/CPAN/authors/id/M/MA/MARCEL/>.
+Archive Network (CPAN). Visit L<http://www.perl.com/CPAN/> to find a CPAN
+site near you, or see
+L<http://search.cpan.org/dist/YAML-Active/>.
 
-=head1 AUTHORS
+The development version lives at
+L<http://github.com/hanekomu/YAML-Active/>.
+Instead of sending patches, please fork this project using the standard git
+and github infrastructure.
 
-Marcel GrE<uuml>nauer, C<< <marcel@cpan.org> >>
+=head1 AUTHOR
+
+  Marcel Gruenauer <marcel@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003-2008 by the authors.
+This software is copyright (c) 2003 by Marcel Gruenauer.
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 

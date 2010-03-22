@@ -1,20 +1,47 @@
-use inc::Module::Install;
-include 'Module::AutoInstall';
 
-name 'YAML-Active';
-all_from 'lib/YAML/Active.pm';
-perl_version '5.006';
+use strict;
+use warnings;
 
-requires 'YAML::XS';
-requires 'Class::Accessor';
-requires 'Class::Accessor::Complex';
+ BEGIN { require 5.008; } 
 
-recommends 'Test::Pod';
-recommends 'Test::Pod::Coverage';
+use ExtUtils::MakeMaker 6.11;
 
-test_requires 'Test::More' => '0.70';
-test_requires 'Test::Compile';
 
-auto_install;
-auto_include;
-WriteAll;
+
+my %WriteMakefileArgs = (
+                       'test' => {
+                                   'TESTS' => 't/*.t'
+                                 },
+                       'NAME' => 'YAML::Active',
+                       'DISTNAME' => 'YAML-Active',
+                       'CONFIGURE_REQUIRES' => {
+                                                 'ExtUtils::MakeMaker' => '6.11'
+                                               },
+                       'AUTHOR' => 'Marcel Gruenauer <marcel@cpan.org>',
+                       'BUILD_REQUIRES' => {},
+                       'ABSTRACT' => 'Combine data and logic in YAML',
+                       'EXE_FILES' => [],
+                       'VERSION' => '1.100810',
+                       'PREREQ_PM' => {
+                                        'Class::Accessor::Complex' => '0',
+                                        'Scalar::Util' => '0',
+                                        'English' => '0',
+                                        'constant' => '0',
+                                        'Exporter' => '0',
+                                        'YAML::XS' => '0',
+                                        'Carp' => '0',
+                                        'Test::More' => '0.88',
+                                        'File::Find' => '0',
+                                        'File::Temp' => '0'
+                                      },
+                       'LICENSE' => 'perl'
+                     );
+
+
+delete $WriteMakefileArgs{LICENSE}
+  unless eval { ExtUtils::MakeMaker->VERSION(6.31) };
+
+WriteMakefile(%WriteMakefileArgs);
+
+
+
